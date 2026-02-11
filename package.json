@@ -4,7 +4,13 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently -n wm,di,hub -c blue,green,yellow \"npm run dev --prefix apps/worldmonitor\" \"npm run dev --prefix apps/deltaintel\" \"npm run dev --prefix apps/intel-hub\"",
+    "dev:worldmonitor": "npm run dev --prefix apps/worldmonitor",
+    "dev:deltaintel": "npm run dev --prefix apps/deltaintel",
+    "dev:intelhub": "npm run dev --prefix apps/intel-hub",
+    "test": "npm run test --prefix apps/intel-hub",
+    "test:watch": "npm run test:watch --prefix apps/intel-hub",
+    "test:coverage": "npm run test:coverage --prefix apps/intel-hub"
   },
   "repository": {
     "type": "git",
