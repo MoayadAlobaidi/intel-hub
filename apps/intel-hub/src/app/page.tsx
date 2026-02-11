@@ -58,6 +58,9 @@ export default function Home() {
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       <header className="intel-hub-header">
         <div style={{ fontWeight: 700 }}>Intel Hub</div>
+        <span style={{ fontSize: 10, color: "#10b981", marginLeft: 8, padding: "2px 6px", background: "#10b98120", borderRadius: 4 }}>
+          Local AI
+        </span>
         <div style={{ display: "flex", gap: 8, marginLeft: 12 }}>
           {tabs.map((t) => (
             <button
@@ -80,7 +83,7 @@ export default function Home() {
           ))}
         </div>
 
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
           {active === "worldmonitor" && (
             <>
               <button
@@ -101,7 +104,7 @@ export default function Home() {
       </header>
 
       <main style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {/* WorldMonitor: iframe (only shown when active, keeps alive in background) */}
+        {/* WorldMonitor: embedded view (only shown when active, keeps alive in background) */}
         <div style={{ flex: 1, display: active === "worldmonitor" ? "flex" : "none" }}>
           <iframe
             src={WM}

@@ -1,10 +1,11 @@
 {
   "name": "intel-hub",
   "version": "1.0.0",
-  "description": "",
+  "description": "Unified intelligence platform with local AI",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently -n wm,hub -c blue,yellow \"npm run dev --prefix apps/worldmonitor\" \"npm run dev --prefix apps/intel-hub\"",
+    "dev:unified": "concurrently -n wm,hub -c blue,yellow \"npm run dev --prefix apps/worldmonitor\" \"npm run dev --prefix apps/intel-hub\"",
     "dev:worldmonitor": "npm run dev --prefix apps/worldmonitor",
     "dev:intelhub": "npm run dev --prefix apps/intel-hub",
     "test": "npm run test --prefix apps/intel-hub",

@@ -1,14 +1,23 @@
 # Intel Hub
 
-A comprehensive intelligence platform consisting of three interconnected applications for monitoring, analysis, and data visualization.
+A comprehensive intelligence platform with **local AI** - all machine learning runs in your browser using ONNX, no external API calls required.
 
-## 🚀 Project Overview
+## Project Overview
 
-Intel Hub is a multi-application platform designed for real-time intelligence gathering, analysis, and visualization. The project consists of three main applications:
+Intel Hub is a unified intelligence platform for real-time monitoring, analysis, and visualization. It combines two directors into a single frontend:
 
-- **Intel Hub** (Main Dashboard) - Central intelligence hub with real-time data processing
-- **Delta Intel** (Geospatial Analysis) - Advanced mapping and location-based intelligence
-- **World Monitor** (Global Intelligence) - AI-powered global monitoring with news aggregation
+- **World Monitor** - AI-powered global monitoring with news aggregation, maps, and real-time data
+- **Delta Intel** - Geospatial analysis with risk scoring and signal tracking
+
+### Local AI Features
+
+All AI/ML features run locally in your browser using ONNX Runtime:
+- **Summarization**: Flan-T5-base model for news summarization
+- **Embeddings**: all-MiniLM-L6-v2 for semantic clustering
+- **Sentiment**: DistilBERT for sentiment analysis
+- **NER**: BERT-NER for entity extraction
+
+No external API keys required - everything runs on your device.
 
 ## 📁 Project Structure
 
