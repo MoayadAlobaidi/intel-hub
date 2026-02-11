@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-
-type TabKey = "worldmonitor" | "deltaintel";
+import { checkOne, TabKey, TabStatus } from "@/utils/checkOne";
 
 export default function Home() {
   const WM = process.env.NEXT_PUBLIC_WORLD_MONITOR_URL ?? "http://localhost:5173";
@@ -17,7 +16,7 @@ export default function Home() {
   );
 
   const [active, setActive] = useState<TabKey>("worldmonitor");
-  const [status, setStatus] = useState<Record<TabKey, "checking" | "online" | "offline">>({
+  const [status, setStatus] = useState<Record<TabKey, TabStatus>>({
     worldmonitor: "checking",
     deltaintel: "checking",
   });
@@ -31,21 +30,14 @@ export default function Home() {
     localStorage.setItem("intelHub.activeTab", active);
   }, [active]);
 
-  async function checkOne(key: TabKey, url: string) {
-    setStatus((s) => ({ ...s, [key]: "checking" }));
-    try {
-      const r = await fetch(`/api/ping?url=${encodeURIComponent(url)}`, { cache: "no-store" });
-      const j = await r.json();
-      setStatus((s) => ({ ...s, [key]: j.ok ? "online" : "offline" }));
-    } catch {
-      setStatus((s) => ({ ...s, [key]: "offline" }));
-    }
-  }
+  const handleCheckOne = (key: TabKey, url: string) => {
+    checkOne({ key, url, setStatus });
+  };
 
   useEffect(() => {
     // initial + periodic health check
-    tabs.forEach((t) => checkOne(t.key, t.url));
-    const id = setInterval(() => tabs.forEach((t) => checkOne(t.key, t.url)), 15000);
+    tabs.forEach((t) => handleCheckOne(t.key, t.url));
+    const id = setInterval(() => tabs.forEach((t) => handleCheckOne(t.key, t.url)), 15000);
     return () => clearInterval(id);
   }, [tabs]);
 
@@ -88,7 +80,7 @@ export default function Home() {
             Open in new tab
           </button>
           <button
-            onClick={() => checkOne(activeTab.key, activeTab.url)}
+            onClick={() => handleCheckOne(activeTab.key, activeTab.url)}
             style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #2a2a2a", background: "transparent", color: "inherit", cursor: "pointer" }}
           >
             Refresh status
