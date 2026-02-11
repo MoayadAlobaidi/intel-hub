@@ -1,0 +1,3 @@
+[submodule "apps/deltaintel"]
+	path = apps/deltaintel
+	url = https://github.com/delta-intel/delta-intelligence-dashboard
