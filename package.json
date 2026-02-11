@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently -n HUB,WM,DI -c auto \"npm --prefix apps/intel-hub run dev -- -p 3001\" \"npm --prefix apps/worldmonitor run dev\" \"npm --prefix apps/deltaintel run dev\"",
+    "dev:hubs": "npm --prefix apps/intel-hub run dev -- -p 3001",
+    "dev:worldmonitor": "npm --prefix apps/worldmonitor run dev",
+    "dev:deltaintel": "npm --prefix apps/deltaintel run dev"
   },
   "repository": {
     "type": "git",

@@ -1,6 +1,0 @@
-[submodule "apps/deltaintel"]
-	path = apps/deltaintel
-	url = https://github.com/delta-intel/delta-intelligence-dashboard
-[submodule "apps/worldmonitor"]
-	path = apps/worldmonitor
-	url = https://github.com/koala73/worldmonitor
