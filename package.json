@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently -n wm,di,hub -c blue,green,yellow \"npm run dev --prefix apps/worldmonitor\" \"npm run dev --prefix apps/deltaintel\" \"npm run dev --prefix apps/intel-hub\"",
+    "dev": "concurrently -n wm,hub -c blue,yellow \"npm run dev --prefix apps/worldmonitor\" \"npm run dev --prefix apps/intel-hub\"",
     "dev:worldmonitor": "npm run dev --prefix apps/worldmonitor",
-    "dev:deltaintel": "npm run dev --prefix apps/deltaintel",
     "dev:intelhub": "npm run dev --prefix apps/intel-hub",
     "test": "npm run test --prefix apps/intel-hub",
     "test:watch": "npm run test:watch --prefix apps/intel-hub",

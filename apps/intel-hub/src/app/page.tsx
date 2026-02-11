@@ -1,26 +1,24 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 
 type TabKey = "worldmonitor" | "deltaintel";
 
+const DeltaDashboard = lazy(() => import("./deltaintel/DeltaDashboard"));
+
+function DeltaIntelLoading() {
+  return (
+    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0a0a" }}>
+      <span style={{ color: "#52525b", fontSize: 12 }}>Loading Delta Intelligence...</span>
+    </div>
+  );
+}
+
 export default function Home() {
   const WM = process.env.NEXT_PUBLIC_WORLD_MONITOR_URL ?? "http://localhost:5173";
-  const DI = process.env.NEXT_PUBLIC_DELTA_INTEL_URL ?? "http://localhost:3000";
-
-  const tabs = useMemo(
-    () => [
-      { key: "worldmonitor" as const, label: "World Monitor", url: WM },
-      { key: "deltaintel" as const, label: "Delta Intel", url: DI },
-    ],
-    [WM, DI]
-  );
 
   const [active, setActive] = useState<TabKey>("worldmonitor");
-  const [status, setStatus] = useState<Record<TabKey, "checking" | "online" | "offline">>({
-    worldmonitor: "checking",
-    deltaintel: "checking",
-  });
+  const [wmStatus, setWmStatus] = useState<"checking" | "online" | "offline">("checking");
 
   useEffect(() => {
     const saved = localStorage.getItem("intelHub.activeTab") as TabKey | null;
@@ -31,78 +29,93 @@ export default function Home() {
     localStorage.setItem("intelHub.activeTab", active);
   }, [active]);
 
-  async function checkOne(key: TabKey, url: string) {
-    setStatus((s) => ({ ...s, [key]: "checking" }));
+  async function checkWorldMonitor() {
+    setWmStatus("checking");
     try {
-      const r = await fetch(`/api/ping?url=${encodeURIComponent(url)}`, { cache: "no-store" });
+      const r = await fetch(`/api/ping?url=${encodeURIComponent(WM)}`, { cache: "no-store" });
       const j = await r.json();
-      setStatus((s) => ({ ...s, [key]: j.ok ? "online" : "offline" }));
+      setWmStatus(j.ok ? "online" : "offline");
     } catch {
-      setStatus((s) => ({ ...s, [key]: "offline" }));
+      setWmStatus("offline");
     }
   }
 
   useEffect(() => {
-    // initial + periodic health check
-    tabs.forEach((t) => checkOne(t.key, t.url));
-    const id = setInterval(() => tabs.forEach((t) => checkOne(t.key, t.url)), 15000);
+    checkWorldMonitor();
+    const id = setInterval(checkWorldMonitor, 15000);
     return () => clearInterval(id);
-  }, [tabs]);
+  }, [WM]);
 
-  const activeTab = tabs.find((t) => t.key === active)!;
+  const tabs = useMemo(
+    () => [
+      { key: "worldmonitor" as const, label: "World Monitor" },
+      { key: "deltaintel" as const, label: "Delta Intel" },
+    ],
+    []
+  );
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-      <header style={{ display: "flex", gap: 10, alignItems: "center", padding: "10px 12px", borderBottom: "1px solid #2a2a2a" }}>
+      <header className="intel-hub-header">
         <div style={{ fontWeight: 700 }}>Intel Hub</div>
         <div style={{ display: "flex", gap: 8, marginLeft: 12 }}>
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setActive(t.key)}
-              style={{
-                padding: "8px 10px",
-                borderRadius: 10,
-                border: "1px solid #2a2a2a",
-                background: active === t.key ? "#1f1f1f" : "transparent",
-                color: "inherit",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
+              className={`intel-hub-tab${active === t.key ? " active" : ""}`}
             >
               <span>{t.label}</span>
-              <span style={{ fontSize: 12, opacity: 0.8 }}>
-                {status[t.key] === "checking" ? "…" : status[t.key]}
-              </span>
+              {t.key === "worldmonitor" && (
+                <span style={{ fontSize: 12, opacity: 0.8 }}>
+                  {wmStatus === "checking" ? "\u2026" : wmStatus}
+                </span>
+              )}
+              {t.key === "deltaintel" && (
+                <span style={{ fontSize: 12, opacity: 0.8 }}>
+                  integrated
+                </span>
+              )}
             </button>
           ))}
         </div>
 
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          <button
-            onClick={() => window.open(activeTab.url, "_blank")}
-            style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #2a2a2a", background: "transparent", color: "inherit", cursor: "pointer" }}
-          >
-            Open in new tab
-          </button>
-          <button
-            onClick={() => checkOne(activeTab.key, activeTab.url)}
-            style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #2a2a2a", background: "transparent", color: "inherit", cursor: "pointer" }}
-          >
-            Refresh status
-          </button>
+          {active === "worldmonitor" && (
+            <>
+              <button
+                onClick={() => window.open(WM, "_blank")}
+                className="intel-hub-action"
+              >
+                Open in new tab
+              </button>
+              <button
+                onClick={checkWorldMonitor}
+                className="intel-hub-action"
+              >
+                Refresh status
+              </button>
+            </>
+          )}
         </div>
       </header>
 
-      <main style={{ flex: 1 }}>
-        <iframe
-          key={activeTab.key}
-          src={activeTab.url}
-          style={{ width: "100%", height: "100%", border: "0" }}
-          allow="clipboard-read; clipboard-write"
-        />
+      <main style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* WorldMonitor: iframe (only shown when active, keeps alive in background) */}
+        <div style={{ flex: 1, display: active === "worldmonitor" ? "flex" : "none" }}>
+          <iframe
+            src={WM}
+            style={{ width: "100%", height: "100%", border: "0" }}
+            allow="clipboard-read; clipboard-write"
+          />
+        </div>
+
+        {/* DeltaIntel: native React (only shown when active) */}
+        <div style={{ flex: 1, display: active === "deltaintel" ? "flex" : "none", flexDirection: "column" }}>
+          <Suspense fallback={<DeltaIntelLoading />}>
+            <DeltaDashboard />
+          </Suspense>
+        </div>
       </main>
     </div>
   );

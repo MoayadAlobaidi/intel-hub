@@ -5,6 +5,11 @@ import { FetchMocker, mockPingEndpoint, response } from '../utils';
 // Import the component
 import Home from '@/app/page';
 
+// Mock the lazy-loaded DeltaDashboard
+vi.mock('@/app/deltaintel/DeltaDashboard', () => ({
+  default: () => <div data-testid="delta-dashboard">Delta Dashboard Mock</div>,
+}));
+
 describe('Home Page', () => {
   let fetchMocker: FetchMocker;
 
@@ -54,7 +59,7 @@ describe('Home Page', () => {
       expect(screen.getByText('Delta Intel')).toBeInTheDocument();
     });
 
-    it('should render action buttons', async () => {
+    it('should render action buttons when World Monitor tab is active', async () => {
       fetchMocker
         .mock({
           contains: '/api/ping',
@@ -66,13 +71,29 @@ describe('Home Page', () => {
         render(<Home />);
       });
 
+      // Default active tab is worldmonitor, so action buttons should be visible
       expect(screen.getByText('Open in new tab')).toBeInTheDocument();
       expect(screen.getByText('Refresh status')).toBeInTheDocument();
     });
+
+    it('should show "integrated" label for Delta Intel tab', async () => {
+      fetchMocker
+        .mock({
+          contains: '/api/ping',
+          response: response().status(200).ok().body({ ok: true, status: 200 }).build(),
+        })
+        .install();
+
+      await act(async () => {
+        render(<Home />);
+      });
+
+      expect(screen.getByText('integrated')).toBeInTheDocument();
+    });
   });
 
-  describe('checkOne function behavior', () => {
-    it('should show checking status indicator initially', async () => {
+  describe('health check behavior', () => {
+    it('should show checking status for World Monitor initially', async () => {
       fetchMocker
         .mock({
           contains: '/api/ping',
@@ -82,13 +103,12 @@ describe('Home Page', () => {
 
       render(<Home />);
 
-      // Both should show the ellipsis character (checking indicator) initially
-      // Using a custom text matcher to handle the special character
+      // Should show the ellipsis character (checking indicator)
       const checkingElements = screen.getAllByText((content) => content === '\u2026');
       expect(checkingElements.length).toBeGreaterThan(0);
     });
 
-    it('should update status to "online" when ping succeeds', async () => {
+    it('should update World Monitor status to "online" when ping succeeds', async () => {
       fetchMocker
         .mock({
           contains: '/api/ping',
@@ -105,7 +125,7 @@ describe('Home Page', () => {
       });
     });
 
-    it('should update status to "offline" when ping fails with ok:false', async () => {
+    it('should update World Monitor status to "offline" when ping fails', async () => {
       fetchMocker
         .mock({
           contains: '/api/ping',
@@ -122,7 +142,7 @@ describe('Home Page', () => {
       });
     });
 
-    it('should update status to "offline" when fetch throws network error', async () => {
+    it('should update World Monitor status to "offline" when fetch throws network error', async () => {
       fetchMocker
         .mock({
           contains: '/api/ping',
@@ -154,6 +174,24 @@ describe('Home Page', () => {
       await waitFor(() => {
         const callHistory = fetchMocker.getCallHistory();
         expect(callHistory.some(c => c.url.includes('/api/ping?url='))).toBe(true);
+      });
+    });
+
+    it('should only ping World Monitor (not Delta Intel since it is integrated)', async () => {
+      fetchMocker
+        .mock({
+          contains: '/api/ping',
+          response: response().status(200).ok().body({ ok: true, status: 200 }).build(),
+        })
+        .install();
+
+      await act(async () => {
+        render(<Home />);
+      });
+
+      await waitFor(() => {
+        // Only 1 ping call (for WorldMonitor), not 2 like before
+        expect(fetchMocker.callCount()).toBe(1);
       });
     });
   });
@@ -197,6 +235,29 @@ describe('Home Page', () => {
 
       expect(localStorage.getItem).toHaveBeenCalledWith('intelHub.activeTab');
     });
+
+    it('should hide action buttons when Delta Intel tab is active', async () => {
+      fetchMocker
+        .mock({
+          contains: '/api/ping',
+          response: response().status(200).ok().body({ ok: true, status: 200 }).build(),
+        })
+        .install();
+
+      await act(async () => {
+        render(<Home />);
+      });
+
+      // Switch to Delta Intel
+      const deltaIntelButton = screen.getByText('Delta Intel').closest('button')!;
+      await act(async () => {
+        fireEvent.click(deltaIntelButton);
+      });
+
+      // Action buttons should not be visible
+      expect(screen.queryByText('Open in new tab')).not.toBeInTheDocument();
+      expect(screen.queryByText('Refresh status')).not.toBeInTheDocument();
+    });
   });
 
   describe('refresh status button', () => {
@@ -212,7 +273,7 @@ describe('Home Page', () => {
         render(<Home />);
       });
 
-      // Wait for initial checks to complete
+      // Wait for initial check to complete
       await waitFor(() => {
         expect(screen.getAllByText('online').length).toBeGreaterThan(0);
       });
@@ -245,9 +306,9 @@ describe('Home Page', () => {
         render(<Home />);
       });
 
-      // Wait for initial checks
+      // Wait for initial check (1 call for WorldMonitor only)
       await waitFor(() => {
-        expect(fetchMocker.callCount()).toBe(2); // 2 tabs checked
+        expect(fetchMocker.callCount()).toBe(1);
       });
 
       // Advance timer by 15 seconds
@@ -255,9 +316,9 @@ describe('Home Page', () => {
         vi.advanceTimersByTime(15000);
       });
 
-      // Should have made 2 more calls (one for each tab)
+      // Should have made 1 more call (for WorldMonitor only)
       await waitFor(() => {
-        expect(fetchMocker.callCount()).toBe(4);
+        expect(fetchMocker.callCount()).toBe(2);
       });
     });
 
@@ -271,9 +332,9 @@ describe('Home Page', () => {
 
       const { unmount } = render(<Home />);
 
-      // Wait for initial checks
+      // Wait for initial check
       await waitFor(() => {
-        expect(fetchMocker.callCount()).toBe(2);
+        expect(fetchMocker.callCount()).toBe(1);
       });
 
       unmount();
@@ -289,7 +350,7 @@ describe('Home Page', () => {
   });
 
   describe('open in new tab button', () => {
-    it('should open the active tab URL in new window', async () => {
+    it('should open the World Monitor URL in new window', async () => {
       const windowOpenMock = vi.fn();
       globalThis.open = windowOpenMock;
 
